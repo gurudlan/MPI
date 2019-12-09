@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include<math.h>
+#ifdef _OPENMP
+        #include<omp.h>
+#endif
+
+
+int main(int argc, char **argv){
+
+        int n,i;
+        double dx, pi, x, y, vysl, pi_part;
+
+        n = atoi(argv[1]);
+        dx = 1.0 / n;
+        pi = 0.0;
+        vysl = 0.0;
+        int chunk = n;
+
+        #ifdef _OPENMP
+                chunk = n / omp_get_num_threads();
+        #endif
+
+        #pragma omp parallel private(x,y,pi_part)
+        {
+        pi_part = 0.0;
+
+        #pragma omp for schedule(dynamic, chunk)
+        for(i = 0; i < n; i++){
+                x = i*dx;
+                y = sqrt(1-x*x);
+                pi_part += y*dx;
+        }
+
+        #pragma omp critical
+        pi += pi_part;
+        }
+
+        printf("pi: %.12f\n", 4*pi);
+
+        return 0;
+}
